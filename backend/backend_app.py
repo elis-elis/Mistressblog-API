@@ -26,7 +26,44 @@ def generate_new_id():
 
 @app.route('/api/posts', methods=['GET'])
 def get_posts():
-    return jsonify(POSTS)
+    """
+    This function retrieves all blog posts with optional sorting by title or content.
+    This endpoint returns all blog posts and allows optional sorting based on the
+    'sort' and 'direction' query parameters.
+
+    Query Parameters:
+    - sort (str): The field to sort by ('title' or 'content').
+    - direction (str): The sort order ('asc' for ascending, 'desc' for descending).
+
+    Returns:
+        A JSON list of blog posts, optionally sorted by the provided parameters.
+        If the parameters are invalid, returns a 400 Bad Request.
+    """
+    sort_field = request.args.get('sort')
+    direction_field = request.args.get('direction', 'asc')
+
+    # Checks if client provided a sort field and if value of sort_field is not "title" or "content"
+    if sort_field and sort_field not in ['title', 'content']:
+        return jsonify({"error": "Invalid sort fields. Must be 'title' or 'content'."})
+
+    # Checks if the direction value is either "asc" or "desc"
+    if direction_field not in ['asc', 'desc']:
+        return jsonify(({"error": "Invalid sort direction. Must be 'asc' or 'desc'."}))
+
+    if sort_field:
+        reverse = direction_field == 'desc'
+        # key parameter allows to specify a function that returns the value to be used for sorting each item.
+        # The sorted() function will sort items based on these returned values,
+        # and returns a new list containing all items from the iterable in sorted order
+        # post[sort_field]: Accesses the value of the field specified by sort_field in the post.
+        # sort_field could be 'title' or 'content'
+        # If reverse is True, the list will be sorted in descending order;
+        # if False, it will be sorted in ascending order.
+        sorted_posts = sorted(POSTS, key=lambda post: post[sort_field].lower(), reverse=reverse)
+    else:
+        sorted_posts = POSTS
+
+    return jsonify(sorted_posts), 200
 
 
 @app.route('/api/posts', methods=['POST'])
@@ -70,7 +107,7 @@ def add_post():
 def delete_post_by_id(id):
     """
     This function deletes a blog post by its ID.
-    And returns a response as a JSON object with status code 200 if the post is found and deleted,
+    It returns a response as a JSON object with status code 200 if the post is found and deleted,
     or a JSON object with an error message and status code 404 if the post is not found.
     """
     # initializing a default state where no matching post has been found.
@@ -113,7 +150,7 @@ def update_post_by_id(id):
         return jsonify({"error": f"Post with id {id} is not found"}), 404
     else:
         # Update the post's title and content if provided, otherwise keep the old values
-        # The 'get' method is used to retrieve the title and content fields from the data dictionary.
+        # The 'get' method is used to retrieve title and content fields from the data dictionary.
         # If a field is not provided (None), it defaults to the current value in post_to_update.
         title = data.get('title', post_to_update['title'])
         content = data.get('content', post_to_update['content'])
@@ -121,7 +158,7 @@ def update_post_by_id(id):
         post_to_update['content'] = content
 
         # Return the updated post with a success message
-        # Since dics are mutable, modifying post_to_update automatically updates the original POSTS list.
+        # Since dics are mutable, modifying post_to_update automatically updates original POSTS list.
         return jsonify({"id": post_to_update['id'],
                         "title": post_to_update['title'],
                         "content": post_to_update['content']
