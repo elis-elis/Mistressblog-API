@@ -7,6 +7,7 @@ CORS(app)  # This will enable CORS for all routes
 POSTS = [
     {"id": 1, "title": "never", "content": "never say never."},
     {"id": 2, "title": "Something is cooking", "content": "not food related."},
+    {"id": 3, "title": "not you", "content": "i like you."},
 ]
 
 
@@ -46,7 +47,7 @@ def add_post():
     if 'content' not in data:
         missing_fields.append('content')
     if missing_fields:
-        return jsonify({"error": "Don't panic, but we have --> Missing field(s): " + ", ".join(missing_fields)}), 400
+        return jsonify({"error": "Missing field(s): " + ", ".join(missing_fields)}), 400
 
     # generate new ID for the post
     new_id = generate_new_id()
@@ -62,6 +63,28 @@ def add_post():
     POSTS.append(new_post)
 
     return jsonify(new_post), 201
+
+
+@app.route('/api/posts/<int:id>', methods=['DELETE'])
+def delete_post_by_id(id):
+    """
+    This function deletes a blog post by its ID.
+    And returns a response as a JSON object with status code 200 if the post is found and deleted,
+    or a JSON object with an error message and status code 404 if the post is not found.
+    """
+    # initializing a default state where no matching post has been found.
+    post_to_delete = None
+
+    for post in POSTS:
+        if post['id'] == id:
+            post_to_delete = post
+            break
+
+    if post_to_delete is None:
+        return jsonify({"error": f"post with id {id} is not found"}), 404
+    else:
+        POSTS.remove(post_to_delete)
+        return jsonify({"message": f"Post with id {id} has been deleted successfully."}), 200
 
 
 if __name__ == '__main__':
